@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sheet Weight Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 400px; margin: 40px auto; padding: 20px; }
+    h1 { font-size: 1.5em; }
+    label { display: block; margin-top: 1em; }
+    input, select { width: 100%; padding: 0.5em; margin: 0.2em 0; }
+    button { margin-top: 1em; padding: 0.5em 1em; }
+    .result { margin-top: 2em; font-size: 1.2em; }
+  </style>
+</head>
+<body>
+  <h1>Sheet Weight Calculator</h1>
+  <form id="weightForm">
+    <label>
+      Material
+      <select id="material" required>
+        <option value="">--Select Material--</option>
+        <option value="steel">Steel (7.85 g/cm³)</option>
+        <option value="aluminum">Aluminum (2.70 g/cm³)</option>
+        <option value="copper">Copper (8.96 g/cm³)</option>
+        <option value="other">Other (enter density)</option>
+      </select>
+    </label>
+    <label id="densityLabel" style="display:none;">
+      Density (g/cm³)
+      <input type="number" step="0.01" id="density" min="0.01" placeholder="e.g. 1.23">
+    </label>
+    <label>
+      Length (mm)
+      <input type="number" id="length" min="0.01" step="0.01" required>
+    </label>
+    <label>
+      Width (mm)
+      <input type="number" id="width" min="0.01" step="0.01" required>
+    </label>
+    <label>
+      Thickness (mm)
+      <input type="number" id="thickness" min="0.01" step="0.01" required>
+    </label>
+    <label>
+      Quantity
+      <input type="number" id="quantity" min="1" step="1" value="1" required>
+    </label>
+    <button type="submit">Calculate Weight</button>
+  </form>
+  <div class="result" id="result"></div>
+  <script>
+    // Densities in g/cm³
+    const densities = {
+      steel: 7.85,
+      aluminum: 2.70,
+      copper: 8.96
+    };
+
+    document.getElementById('material').addEventListener('change', function() {
+      if (this.value === 'other') {
+        document.getElementById('densityLabel').style.display = 'block';
+        document.getElementById('density').required = true;
+      } else {
+        document.getElementById('densityLabel').style.display = 'none';
+        document.getElementById('density').required = false;
+      }
+    });
+
+    document.getElementById('weightForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const material = document.getElementById('material').value;
+      let density = densities[material];
+      if (material === 'other') {
+        density = parseFloat(document.getElementById('density').value);
+        if (!density || density <= 0) {
+          document.getElementById('result').textContent = "Please enter a valid density.";
+          return;
+        }
+      }
+      const length = parseFloat(document.getElementById('length').value);
+      const width = parseFloat(document.getElementById('width').value);
+      const thickness = parseFloat(document.getElementById('thickness').value);
+      const quantity = parseInt(document.getElementById('quantity').value);
+
+      // Convert mm to cm for volume calculation
+      const vol_cm3 = (length / 10) * (width / 10) * (thickness / 10) * quantity;
+      const weight_g = vol_cm3 * density;
+      const weight_kg = weight_g / 1000;
+
+      document.getElementById('result').textContent =
+        `Total weight: ${weight_kg.toFixed(3)} kg`;
+    });
+  </script>
+</body>
+</html>
