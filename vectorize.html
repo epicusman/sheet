@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>JPEG to SVG Converter</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; }
+    #preview img, #svgContainer svg { max-width: 100%; height: auto; display: block; margin-top: 1em; }
+    #download { margin-top: 1em; display: none; }
+  </style>
+</head>
+<body>
+  <h1>JPEG to SVG Converter</h1>
+  <input type="file" id="fileInput" accept="image/jpeg">
+  <div id="preview"></div>
+  <a id="download" href="#" download="vectorized.svg">Download SVG</a>
+  <div id="svgContainer"></div>
+  <canvas id="canvas" style="display:none;"></canvas>
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const preview = document.getElementById('preview');
+    const svgContainer = document.getElementById('svgContainer');
+    const downloadLink = document.getElementById('download');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          // Limit size for performance
+          const maxSize = 100;
+          const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+          const width = Math.floor(img.width * scale);
+          const height = Math.floor(img.height * scale);
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+          preview.innerHTML = '';
+          preview.appendChild(img);
+          const imageData = ctx.getImageData(0, 0, width, height).data;
+          let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+          for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+              const idx = (y * width + x) * 4;
+              const r = imageData[idx];
+              const g = imageData[idx + 1];
+              const b = imageData[idx + 2];
+              const a = imageData[idx + 3] / 255;
+              // Skip transparent pixels
+              if (a === 0) continue;
+              const color = `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+              svg += `<rect x="${x}" y="${y}" width="1" height="1" fill="${color}" fill-opacity="${a}" />`;
+            }
+          }
+          svg += '</svg>';
+          svgContainer.innerHTML = svg;
+          const blob = new Blob([svg], { type: 'image/svg+xml' });
+          const url = URL.createObjectURL(blob);
+          downloadLink.href = url;
+          downloadLink.style.display = 'inline-block';
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  </script>
+</body>
+</html>
